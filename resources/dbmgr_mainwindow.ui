@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>898</width>
+    <height>578</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>온도미쁨 - 데이터베이스 관리 도구</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QVBoxLayout" name="baseVert">
+      <item>
+       <layout class="QHBoxLayout" name="upperTimeSearchHori">
+        <item>
+         <widget class="QCheckBox" name="timeSearchEnableChkBox">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>시간 검색</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDateTimeEdit" name="timeSearchFromEdit">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="timeSearchFromLbl">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>부터</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDateTimeEdit" name="timeSearchToEdit">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="timeSearchToLbl">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>까지</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="upperNameSearchHori">
+        <item>
+         <widget class="QLineEdit" name="nameSearchEdit">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="searchBtn">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>검색</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QTableView" name="tableView"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="lowerExportGraphHori">
+        <item>
+         <widget class="QPushButton" name="graphBtn">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>그래프</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="exportBtn">
+          <property name="font">
+           <font>
+            <family>Apple SD Gothic Neo</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>액셀 파일로 내보내기</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
