@@ -11,10 +11,14 @@
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot, Qt
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
+import matplotlib
 import matplotlib.pyplot as plt
 import openpyxl
 import sqlite3
 import sys
+
+matplotlib.use('Qt5Agg')
+plt.rc('font', family='Apple SD Gothic Neo')
 
 
 class PathSelectWindow(QMainWindow):
@@ -62,56 +66,6 @@ class PathSelectWindow(QMainWindow):
         self.close()
 
 
-class filePathDialog(QDialog):
-    path = pyqtSignal(str)
-
-    def __init__(self):
-        super().__init__()
-        self.setupUi()
-
-    def setupUi(self):
-        self.resize(635, 89)
-        self.setMinimumSize(QtCore.QSize(635, 89))
-        self.setMaximumSize(QtCore.QSize(10000, 89))
-        self.setWindowTitle("온도미쁨 - 데이터베이스 관리 도구")
-
-        self.verticalLayout_2 = QVBoxLayout(self)
-        self.base = QVBoxLayout()
-        self.base_in = QHBoxLayout()
-
-        self.filePathLbl = QLabel(self)
-        font = QtGui.QFont()
-        font.setFamily("Apple SD Gothic Neo")
-        self.filePathLbl.setFont(font)
-        self.base_in.addWidget(self.filePathLbl)
-
-        self.filePathEdit = QLineEdit(self)
-        self.base_in.addWidget(self.filePathEdit)
-        self.base.addLayout(self.base_in)
-
-        self.verticalLayout_2.addLayout(self.base)
-        self.buttonBox = QDialogButtonBox(self)
-        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
-        self.verticalLayout_2.addWidget(self.buttonBox)
-
-        self.buttonBox.accepted.connect(self.accept)  # type: ignore
-        self.buttonBox.rejected.connect(self.reject)  # type: ignore
-
-        self.show()
-
-    def accept(self):
-        print("accepted", self.filePathEdit.text())
-        self.path.emit(self.filePathEdit.text())
-        self.destroy()
-
-
-    def reject(self):
-        print("rejected")
-        self.destroy()
-
-
-
 class DBLoadWorker(QThread):
     data = pyqtSignal(list)
     error = pyqtSignal(Exception)
@@ -137,6 +91,7 @@ class DBLoadWorker(QThread):
         print(query)
         return self.cur.execute(query).fetchall()
 
+
 class Grapher(QThread):
     def __init__(self):
         super().__init__()
@@ -148,8 +103,11 @@ class Grapher(QThread):
     def graph(self, data, name):
         plt.title(name)
         plt.plot(data[0], data[1], label='체온')
+        plt.xticks(rotation=45)
         plt.legend()
+        plt.tight_layout()
         plt.show()
+
 
 class ExportWorker(QThread):
     def __init__(self):
@@ -334,14 +292,10 @@ class MainWindow(QMainWindow):
         if not self.res:
             return
 
-        a = filePathDialog()
-        a.path.connect(self.export_helper)
-        self.__next__ = a
+        path, ok = QInputDialog.getText(self, "내보내기", "파일 경로: ")
 
-    @pyqtSlot(str)
-    def export_helper(self, path):
-        print("signal", path)
-        self.exporter.export(self.res, path)
+        if ok:
+            self.exporter.export(self.res, path)
 
 
 app = QApplication(sys.argv)
