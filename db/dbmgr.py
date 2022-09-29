@@ -3,12 +3,14 @@
 # +------------+--------------+-----------------------------------------------------------+
 # |  Andrew A. |  2022/09/29  | Merged dbmgr_mainwindow.py and dbmgr_pathselect.py        |
 # +------------+--------------+-----------------------------------------------------------+
-
+# |  Andrew A. |  2022/09/29  | Implemented basic features                                |
+# +------------+--------------+-----------------------------------------------------------+
 
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot, Qt
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
+import openpyxl
 import sqlite3
 import sys
 
@@ -90,10 +92,43 @@ class Grapher(QThread):
         while True:
             self.msleep(100)
 
-    def graph(self, data):
-        plt.plot(data[0], data[1])
+    def graph(self, data, name):
+        plt.title(name)
+        plt.plot(data[0], data[1], label='체온')
+        plt.legend()
         plt.show()
 
+class ExportWorker(QThread):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        while True:
+            self.msleep(100)
+
+    def export(self, data):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+
+        ws.title = "10912 안동기"
+        ws['A1'] = "번호"
+        ws['B1'] = "날짜"
+        ws['C1'] = "학번"
+        ws['D1'] = "이름"
+        ws['E1'] = "체온"
+
+        depth = len(data) + 1
+        start = "A2"
+        end = "E" + str(depth)
+        cell_range = start + ":" + end
+
+        print(cell_range)
+
+        for row, datum in zip(ws[start:end], data):
+            for cell, line in zip(row, datum):
+                cell.value = line
+
+        wb.save("test.xlsx")
 
 class MainWindow(QMainWindow):
     def __init__(self, path):
@@ -166,6 +201,7 @@ class MainWindow(QMainWindow):
 
         self.exportBtn = QPushButton("액셀 파일로 내보내기", self.centralwidget)
         self.exportBtn.setFont(font)
+        self.exportBtn.clicked.connect(self.export)
         self.lowerExportGraphHori.addWidget(self.exportBtn)
 
         self.baseVert.addLayout(self.lowerExportGraphHori)
@@ -180,6 +216,9 @@ class MainWindow(QMainWindow):
 
         self.grapher = Grapher()
         self.grapher.start()
+
+        self.exporter = ExportWorker()
+        self.exporter.start()
 
         self.show()
 
@@ -227,8 +266,16 @@ class MainWindow(QMainWindow):
         if not self.res:
             return
 
-        self.grapher.graph(([x[1] for x in self.res], [x[4] for x in self.res]))
+        self.grapher.graph(([x[1] for x in self.res], [x[4] for x in self.res]), str(self.res[0][2]) + self.res[0][3])
+
+    def export(self):
+        if not self.res:
+            return
+
+        self.exporter.export(self.res)
 
 app = QApplication(sys.argv)
 pathselect = PathSelectWindow()
 sys.exit(app.exec_())
+
+
