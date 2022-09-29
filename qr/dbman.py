@@ -36,5 +36,5 @@ def find_name(code: int) -> str:
 
 def insert_data(code: int, name: str, temp: float):
     print(f"INSERT INTO log(checktime, classcode, name, temp) VALUES (datetime(), {int(code)}, {name}, {temp})")
-    cur.execute(f'INSERT INTO log(checktime, classcode, name, temp) VALUES ("{datetime.datetime.now()}", {int(code)}, "{name}", {temp})')
+    cur.execute(f'INSERT INTO log(checktime, classcode, name, temp) VALUES ("{str(datetime.datetime.now()).split(" ")[0]}", {int(code)}, "{name}", {temp})')
     db.commit()

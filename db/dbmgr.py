@@ -8,6 +8,8 @@
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot, Qt
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
+import matplotlib.pyplot as plt
+import sqlite3
 import sys
 
 
@@ -52,13 +54,52 @@ class PathSelectWindow(QMainWindow):
         except FileNotFoundError:
             return
 
-        self.next = MainWindow()
+        self.next = MainWindow(path)
         self.close()
+
+class DBLoadWorker(QThread):
+    data = pyqtSignal(list)
+    error = pyqtSignal(Exception)
+
+    def __init__(self, cur):
+        super().__init__()
+        self.cur = cur
+
+    def run(self):
+        while True:
+            self.msleep(100)
+
+    def fetch(self, name="", code=0, time_from="", time_to=""):
+        query = "SELECT * FROM LOG "
+
+        if name:
+            query += f'WHERE name="{name}"'
+
+        if code:
+            query += "WHERE classcode=" + str(code)
+
+        # TODO: 시간 검색 구현
+        print(query)
+        return self.cur.execute(query).fetchall()
+
+class Grapher(QThread):
+    def __init__(self):
+        super().__init__()
+
+    def run(self):
+        while True:
+            self.msleep(100)
+
+    def graph(self, data):
+        plt.plot(data[0], data[1])
+        plt.show()
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, path):
         super().__init__()
+        self.con = sqlite3.connect(path)
+        self.cur = self.con.cursor()
         self.setupUi()
 
     def setupUi(self):
@@ -108,17 +149,19 @@ class MainWindow(QMainWindow):
 
         self.searchBtn = QPushButton("검색", self.centralwidget)
         self.searchBtn.setFont(font)
+        self.searchBtn.clicked.connect(self.getData)
         self.upperNameSearchHori.addWidget(self.searchBtn)
 
         self.baseVert.addLayout(self.upperNameSearchHori)
 
-        self.tableView = QTableView(self.centralwidget)
-        self.baseVert.addWidget(self.tableView)
+        self.tableWidget = QTableWidget(self.centralwidget)
+        self.baseVert.addWidget(self.tableWidget)
 
         self.lowerExportGraphHori = QHBoxLayout()
 
         self.graphBtn = QPushButton("그래프 보기", self.centralwidget)
         self.graphBtn.setFont(font)
+        self.graphBtn.clicked.connect(self.graph)
         self.lowerExportGraphHori.addWidget(self.graphBtn)
 
         self.exportBtn = QPushButton("액셀 파일로 내보내기", self.centralwidget)
@@ -131,6 +174,12 @@ class MainWindow(QMainWindow):
 
         self.statusbar = QStatusBar(self)
         self.setStatusBar(self.statusbar)
+
+        self.db = DBLoadWorker(self.cur)
+        self.db.start()
+
+        self.grapher = Grapher()
+        self.grapher.start()
 
         self.show()
 
@@ -145,6 +194,40 @@ class MainWindow(QMainWindow):
             self.timeSearchToLbl.setEnabled(False)
             self.timeSearchFromEdit.setEnabled(False)
             self.timeSearchToEdit.setEnabled(False)
+
+    def getData(self):
+        if self.nameSearchEdit.text():
+            condition = self.nameSearchEdit.text()
+
+            if condition.isdigit():
+                res = self.db.fetch(code=int(condition))
+            else:
+                res = self.db.fetch(name=condition)
+        else:
+            res = self.db.fetch()
+
+        self.res = res
+        self.tableWidget.setRowCount(len(res))
+        self.tableWidget.setColumnCount(4)
+
+        for index, packed_data in enumerate(res):
+            ID, date, classcode, name, temp = packed_data
+            self.tableWidget.setItem(index, 0, QTableWidgetItem(date))
+            self.tableWidget.setItem(index, 1, QTableWidgetItem(str(classcode)))
+            self.tableWidget.setItem(index, 2, QTableWidgetItem(name))
+            self.tableWidget.setItem(index, 3, QTableWidgetItem(str(temp)))
+
+        column_headers = ("시간", "학번", "이름", "체온")
+        self.tableWidget.setHorizontalHeaderLabels(column_headers)
+
+    def graph(self):
+        if not self.nameSearchEdit.text():
+            return
+
+        if not self.res:
+            return
+
+        self.grapher.graph(([x[1] for x in self.res], [x[4] for x in self.res]))
 
 app = QApplication(sys.argv)
 pathselect = PathSelectWindow()
