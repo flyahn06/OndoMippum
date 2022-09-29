@@ -59,7 +59,7 @@ class PathSelectWindow(QMainWindow):
             return
 
         self.next = MainWindow(path)
-        self.destroy()
+        self.close()
 
 
 class filePathDialog(QDialog):
