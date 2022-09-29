@@ -36,6 +36,7 @@ while True:
 
     else:
         for code in codes:
+            print(code)
             recognized_qr = code.data.decode('utf-8')
 
             # 데이터베이스에서 이름 검색
@@ -66,6 +67,7 @@ while True:
                 previous_qr = recognized_qr
                 print(recognized_qr, name)
                 print(code)
+                dbman.insert_data(recognized_qr, name, 36.5)
 
     cv2.imshow("QR", frame)
 

@@ -8,6 +8,7 @@
 
 
 import sqlite3
+import datetime
 
 db = sqlite3.connect("../db/main.db")
 cur = db.cursor()
@@ -24,5 +25,15 @@ def find_name(code: int) -> str:
         return ""
 
     res = cur.execute(f"SELECT * FROM students WHERE code={code}")
+    data = res.fetchone()
 
-    return res.fetchone()[2]
+    if data:
+        return data[2]
+    else:
+        return ""
+
+
+def insert_data(code: int, name: str, temp: float):
+    print(f"INSERT INTO log(checktime, classcode, name, temp) VALUES (datetime(), {int(code)}, {name}, {temp})")
+    cur.execute(f'INSERT INTO log(checktime, classcode, name, temp) VALUES ("{datetime.datetime.now()}", {int(code)}, "{name}", {temp})')
+    db.commit()
