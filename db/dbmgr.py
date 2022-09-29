@@ -5,6 +5,8 @@
 # +------------+--------------+-----------------------------------------------------------+
 # |  Andrew A. |  2022/09/29  | Implemented basic features                                |
 # +------------+--------------+-----------------------------------------------------------+
+# |  Andrew A. |  2022/09/29  | Added export feature                                      |
+# +------------+--------------+-----------------------------------------------------------+
 
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot, Qt
 from PyQt5 import QtCore, QtGui
@@ -57,7 +59,58 @@ class PathSelectWindow(QMainWindow):
             return
 
         self.next = MainWindow(path)
-        self.close()
+        self.destroy()
+
+
+class filePathDialog(QDialog):
+    path = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi()
+
+    def setupUi(self):
+        self.resize(635, 89)
+        self.setMinimumSize(QtCore.QSize(635, 89))
+        self.setMaximumSize(QtCore.QSize(10000, 89))
+        self.setWindowTitle("온도미쁨 - 데이터베이스 관리 도구")
+
+        self.verticalLayout_2 = QVBoxLayout(self)
+        self.base = QVBoxLayout()
+        self.base_in = QHBoxLayout()
+
+        self.filePathLbl = QLabel(self)
+        font = QtGui.QFont()
+        font.setFamily("Apple SD Gothic Neo")
+        self.filePathLbl.setFont(font)
+        self.base_in.addWidget(self.filePathLbl)
+
+        self.filePathEdit = QLineEdit(self)
+        self.base_in.addWidget(self.filePathEdit)
+        self.base.addLayout(self.base_in)
+
+        self.verticalLayout_2.addLayout(self.base)
+        self.buttonBox = QDialogButtonBox(self)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.verticalLayout_2.addWidget(self.buttonBox)
+
+        self.buttonBox.accepted.connect(self.accept)  # type: ignore
+        self.buttonBox.rejected.connect(self.reject)  # type: ignore
+
+        self.show()
+
+    def accept(self):
+        print("accepted", self.filePathEdit.text())
+        self.path.emit(self.filePathEdit.text())
+        self.destroy()
+
+
+    def reject(self):
+        print("rejected")
+        self.destroy()
+
+
 
 class DBLoadWorker(QThread):
     data = pyqtSignal(list)
@@ -106,7 +159,7 @@ class ExportWorker(QThread):
         while True:
             self.msleep(100)
 
-    def export(self, data):
+    def export(self, data, path):
         wb = openpyxl.Workbook()
         ws = wb.active
 
@@ -128,13 +181,14 @@ class ExportWorker(QThread):
             for cell, line in zip(row, datum):
                 cell.value = line
 
-        wb.save("test.xlsx")
+        wb.save(path)
 
 class MainWindow(QMainWindow):
     def __init__(self, path):
         super().__init__()
         self.con = sqlite3.connect(path)
         self.cur = self.con.cursor()
+        self.res = []
         self.setupUi()
 
     def setupUi(self):
@@ -222,6 +276,10 @@ class MainWindow(QMainWindow):
 
         self.show()
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Return or e.key() == Qt.Key_Enter:
+            self.getData()
+
     def enableTimeSearch(self):
         if self.timeSearchEnableChkBox.isChecked():
             self.timeSearchFromLbl.setEnabled(True)
@@ -261,9 +319,13 @@ class MainWindow(QMainWindow):
 
     def graph(self):
         if not self.nameSearchEdit.text():
+            QMessageBox.critical(self, "오류", "체온에 대한 그래프는 한 사람만 선택되었을 때 그릴 수 있습니다. \n이름/학번 검색 후 다시 시도해주세요",
+                                 QMessageBox.Yes, QMessageBox.Yes)
             return
 
         if not self.res:
+            QMessageBox.critical(self, "오류", "검색된 결과가 0건입니다.",
+                                 QMessageBox.Yes, QMessageBox.Yes)
             return
 
         self.grapher.graph(([x[1] for x in self.res], [x[4] for x in self.res]), str(self.res[0][2]) + self.res[0][3])
@@ -272,7 +334,15 @@ class MainWindow(QMainWindow):
         if not self.res:
             return
 
-        self.exporter.export(self.res)
+        a = filePathDialog()
+        a.path.connect(self.export_helper)
+        self.__next__ = a
+
+    @pyqtSlot(str)
+    def export_helper(self, path):
+        print("signal", path)
+        self.exporter.export(self.res, path)
+
 
 app = QApplication(sys.argv)
 pathselect = PathSelectWindow()
